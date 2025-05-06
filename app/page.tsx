@@ -1,92 +1,124 @@
 
 'use client';
+
 import React, { useState } from 'react';
 
-const Page = () => {
+export default function Page() {
   const [population, setPopulation] = useState('');
   const [area, setArea] = useState('');
-  const [density, setDensity] = useState('medium');
+  const [density, setDensity] = useState('low');
   const [elderly, setElderly] = useState('');
   const [children, setChildren] = useState('');
   const [female, setFemale] = useState('');
   const [chronic, setChronic] = useState('');
-  const [setting, setSetting] = useState('urban');
-  const [approach, setApproach] = useState('single');
-  const [results, setResults] = useState(null);
+  const [setting, setSetting] = useState('Urban');
+  const [approach, setApproach] = useState('Single Stage');
+  const [recommendations, setRecommendations] = useState([]);
 
   const calculate = () => {
     const pop = parseInt(population);
     const km2 = parseFloat(area);
-    const eld = parseFloat(elderly);
-    const child = parseFloat(children);
-    const fem = parseFloat(female);
-    const chron = parseFloat(chronic);
+    const el = parseInt(elderly);
+    const ch = parseInt(children);
+    const fem = parseInt(female);
+    const cr = parseInt(chronic);
+    const isUrban = setting === 'Urban';
 
-    const ambulances = Math.ceil(Math.max(pop / 10000, km2 / (setting === 'urban' ? 4 : 10)));
-    const phc = Math.ceil(Math.max(pop / 10000, km2 / 1.5));
-    const tele = Math.ceil(pop / 5000 + (eld > 15 ? 1 : 0));
-    const pods = (pop > 20000 || km2 > 2 || (!phc && !ambulances)) ? 1 : 0;
-    const mobile = Math.ceil(km2 / 40) + (chron > 20 ? 1 : 0);
+    const amb = Math.max(
+      Math.ceil(pop / 10000),
+      Math.ceil(km2 / (isUrban ? 4 : 10))
+    );
+    const phc = Math.max(
+      Math.ceil(pop / 10000),
+      Math.ceil(km2 / 1.5)
+    );
+    const tele = Math.ceil(pop / 5000) + (el > 15 ? 1 : 0);
+    const mobile = Math.ceil(km2 / 40) + (cr > 20 ? 1 : 0);
+    const pods = (phc === 0 || amb === 0) ? 1 : 0;
     const women = fem > 60 ? 1 : 0;
 
-    const perYear = (count: number) => {
-      const base = Math.floor(count / 5);
-      const mod = count % 5;
-      return Array.from({ length: 5 }, (_, i) => base + (i < mod ? 1 : 0));
-    };
+    const items = [
+      `🚑 AMBULANCES: ${amb} — Red Crescent: 1 per 10,000 or 4 km² urban / 10 km² rural`,
+      `🏥 PHC: ${phc} — WHO Standard: 1 per 10,000 or 1.5 km²`,
+      `👩‍💻 TELE: ${tele} — Digital Health: 1 per 5000 + elderly modifier`,
+      `🆘 PODS: ${pods} — Fallback: If no PHC within 2km or Ambulance within 10km`,
+      `🚐 MOBILE: ${mobile} — 1 per 40 km² + chronic illness modifier`,
+      `🚺 WOMEN: ${women} — Vision 2030: Specialized access for high female ratio`
+    ];
 
-    setResults({
-      ambulances: { total: ambulances, perYear: perYear(ambulances), justification: "Red Crescent: 1 per 10,000 or 4 km² urban / 10 km² rural" },
-      phc: { total: phc, perYear: perYear(phc), justification: "WHO Standard: 1 per 10,000 or 1.5 km²" },
-      tele: { total: tele, perYear: perYear(tele), justification: "Digital Health: 1 per 5000 + elderly modifier" },
-      pods: { total: pods, perYear: perYear(pods), justification: "Fallback: If no PHC within 2km or Ambulance within 10km" },
-      mobile: { total: mobile, perYear: perYear(mobile), justification: "1 per 40 km² + chronic illness modifier" },
-      women: { total: women, perYear: perYear(women), justification: "Vision 2030: Specialized access for high female ratio" },
-    });
+    setRecommendations(items);
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <img src="/logo.png" alt="Logo" style={{ height: 40 }} />
+    <div style={{ fontFamily: 'Arial, sans-serif', padding: '2rem' }}>
+      <img src="/logo.png" alt="Logo" style={{ height: 40, marginBottom: '1rem' }} />
       <h1>HMG Urban Planning Tool</h1>
 
-      <div>
-        <label>Population:</label><input value={population} onChange={e => setPopulation(e.target.value)} />
-        <label>Area (km²):</label><input value={area} onChange={e => setArea(e.target.value)} />
-        <label>Density:</label><select value={density} onChange={e => setDensity(e.target.value)}>
-          <option>low</option><option>medium</option><option>high</option>
-        </select>
-        <label>% Elderly (60+):</label><input value={elderly} onChange={e => setElderly(e.target.value)} />
-        <label>% Children (under 18):</label><input value={children} onChange={e => setChildren(e.target.value)} />
-        <label>% Female:</label><input value={female} onChange={e => setFemale(e.target.value)} />
-        <label>% Chronic Illness:</label><input value={chronic} onChange={e => setChronic(e.target.value)} />
-        <label>Setting:</label><select value={setting} onChange={e => setSetting(e.target.value)}>
-          <option value="urban">Urban</option><option value="rural">Rural</option>
-        </select>
-        <label>Deployment Approach:</label><select value={approach} onChange={e => setApproach(e.target.value)}>
-          <option value="single">Single Stage</option><option value="phased">Phased (5 Years)</option>
-        </select>
-        <button onClick={calculate}>Calculate</button>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', maxWidth: 800 }}>
+        <label>
+          Population:
+          <input type="number" value={population} onChange={e => setPopulation(e.target.value)} />
+        </label>
+        <label>
+          Area (km²):
+          <input type="number" value={area} onChange={e => setArea(e.target.value)} />
+        </label>
+        <label>
+          Density:
+          <select value={density} onChange={e => setDensity(e.target.value)}>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label>
+          % Elderly (60+):
+          <input type="number" value={elderly} onChange={e => setElderly(e.target.value)} />
+        </label>
+        <label>
+          % Children (under 18):
+          <input type="number" value={children} onChange={e => setChildren(e.target.value)} />
+        </label>
+        <label>
+          % Female:
+          <input type="number" value={female} onChange={e => setFemale(e.target.value)} />
+        </label>
+        <label>
+          % Chronic Illness:
+          <input type="number" value={chronic} onChange={e => setChronic(e.target.value)} />
+        </label>
+        <label>
+          Setting:
+          <select value={setting} onChange={e => setSetting(e.target.value)}>
+            <option value="Urban">Urban</option>
+            <option value="Rural">Rural</option>
+          </select>
+        </label>
+        <label>
+          Deployment Approach:
+          <select value={approach} onChange={e => setApproach(e.target.value)}>
+            <option value="Single Stage">Single Stage</option>
+            <option value="Phased 5-Year">Phased 5-Year</option>
+          </select>
+        </label>
       </div>
 
-      {results && (
-        <div>
-          <h3>Recommendations:</h3>
-          {Object.entries(results).map(([key, val]: any) => (
-            <div key={key}>
-              <strong>{key.toUpperCase()}:</strong> {val.total}  
-              <em> — {val.justification}</em><br/>
-              {approach === 'phased' && <ul>{val.perYear.map((y: number, i: number) => <li key={i}>Year {i + 1}: {y}</li>)}</ul>}
-            </div>
-          ))}
+      <button onClick={calculate} style={{ marginTop: '1rem', padding: '0.6rem 1.2rem' }}>Calculate</button>
+
+      {recommendations.length > 0 && (
+        <div className="recommendations" style={{ marginTop: '2rem' }}>
+          <h2>Recommendations:</h2>
+          <ul>
+            {recommendations.map((rec, i) => (
+              <li key={i}>{rec}</li>
+            ))}
+          </ul>
         </div>
       )}
 
-      <div style={{ position: 'fixed', bottom: 10, right: 20, fontSize: '14px', color: '#666' }}>
-        Made by: Dr. Mohammed AlBarti – Corporate Business Development
+      <div style={{ marginTop: '2rem', fontSize: '0.9rem', color: '#888' }}>
+        Made by: Dr. Mohammed alBarti — Corporate Business Development
       </div>
     </div>
   );
-};
-
-export default Page;
+}
