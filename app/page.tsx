@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import html2pdf from 'html2pdf.js';
 
 export default function UrbanPlanningTool() {
   const [inputs, setInputs] = useState({
@@ -78,10 +77,13 @@ export default function UrbanPlanningTool() {
     }
   };
 
-  const exportToPDF = () => {
-    const element = document.getElementById('pdf-content');
-    html2pdf().from(element).save('HMG_Urban_Recommendations.pdf');
-  };
+const exportToPDF = async () => {
+  const element = document.getElementById('pdf-content');
+  if (!element) return;
+
+  const html2pdf = (await import('html2pdf.js')).default;
+  html2pdf().from(element).save('HMG_Urban_Recommendations.pdf');
+};
 
   return (
     <div style={{ textAlign: 'center', fontFamily: 'Arial', padding: '2rem' }}>
