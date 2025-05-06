@@ -1,20 +1,18 @@
 {
   "name": "hmg-urban-tool-v3",
   "version": "1.0.0",
+  "description": "HMG Urban Planning Tool for Healthcare Infrastructure",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
-    "next": "^13.4.4",
+    "next": "13.5.11",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
     "html2pdf.js": "^0.10.1"
   },
-  "devDependencies": {
-    "typescript": "^5.4.2",
-    "@types/react": "^18.2.8",
-    "@types/node": "^20.10.5"
-  }
+  "devDependencies": {},
+  "license": "MIT"
 }
