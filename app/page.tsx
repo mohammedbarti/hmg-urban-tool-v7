@@ -38,7 +38,7 @@ export default function UrbanPlanningTool() {
     let tele = Math.ceil(pop / 5000);
     let pods = (phc === 0 || amb === 0) ? 1 : 0;
     let mobile = Math.ceil(area / 40);
-    let women = female > 60 ? 1 : 0;
+    let women = parseInt(female) > 60 ? 1 : 0;
 
     if (parseInt(elderly) > 15) tele += 1;
     if (parseInt(chronic) > 20) mobile += 1;
