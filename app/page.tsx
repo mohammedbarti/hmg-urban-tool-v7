@@ -1,7 +1,7 @@
-
 "use client";
 
 import React, { useState } from 'react';
+import html2pdf from 'html2pdf.js';
 
 export default function UrbanPlanningTool() {
   const [inputs, setInputs] = useState({
@@ -10,113 +10,138 @@ export default function UrbanPlanningTool() {
     density: 'Low',
     elderly: '',
     children: '',
-    female: '',
     chronic: '',
+    female: '',
     setting: 'Urban',
-    deploymentApproach: 'Single Stage'
+    deployment: 'Single Stage'
   });
-  const [recommendations, setRecommendations] = useState([]);
+
+  const [recommendations, setRecommendations] = useState(null);
 
   const handleChange = (e) => {
-    setInputs({ ...inputs, [e.target.name]: e.target.value });
-  };
-
-  const distributeOverYears = (count) => {
-    const perYear = Math.floor(count / 5);
-    const remainder = count % 5;
-    return Array(5).fill(perYear).map((v, i) => i < remainder ? v + 1 : v);
+    const { name, value } = e.target;
+    setInputs({ ...inputs, [name]: value });
   };
 
   const calculate = () => {
-    const pop = parseInt(inputs.population);
+    const population = parseInt(inputs.population);
     const area = parseFloat(inputs.area);
-    const { density, elderly, children, female, chronic, setting, deploymentApproach } = inputs;
-    const isRural = setting === 'Rural';
+    const density = inputs.density;
+    const setting = inputs.setting;
+    const elderly = parseInt(inputs.elderly);
+    const children = parseInt(inputs.children);
+    const chronic = parseInt(inputs.chronic);
+    const female = parseInt(inputs.female);
+    const deployment = inputs.deployment;
 
-    let amb = Math.ceil(Math.max(pop / (isRural ? 5000 : 10000), area / (isRural ? 10 : 4)));
-    let phc = Math.ceil(Math.max(pop / 10000, area / 1.5));
-    let tele = Math.ceil(pop / 5000);
+    let amb = Math.max(
+      Math.ceil(population / 10000),
+      Math.ceil(area / (setting === 'Urban' ? 4 : 10))
+    );
+
+    let phc = Math.max(
+      Math.ceil(population / 10000),
+      Math.ceil(area / 1.5)
+    );
+
+    let tele = Math.ceil(population / 5000);
+    if (elderly > 15) tele += 1;
+
     let pods = (phc === 0 || amb === 0) ? 1 : 0;
+
     let mobile = Math.ceil(area / 40);
-    let women = parseInt(female) > 60 ? 1 : 0;
+    if (chronic > 20) mobile += 1;
 
-    if (parseInt(elderly) > 15) tele += 1;
-    if (parseInt(chronic) > 20) mobile += 1;
-    if (parseInt(children) > 25) phc += 1;
+    let women = female > 60 ? 1 : 0;
 
-    const final = [];
-
-    const addRec = (emoji, label, count, ref) => {
-      if (deploymentApproach === 'Phased 5-Year') {
-        const phases = distributeOverYears(count);
-        final.push(`${emoji} ${label.toUpperCase()}: ${count} — ${ref} — Phase 1–5: ${phases.join(', ')}`);
-      } else {
-        final.push(`${emoji} ${label.toUpperCase()}: ${count} — ${ref}`);
-      }
+    let data = {
+      amb,
+      phc,
+      tele,
+      pods,
+      mobile,
+      women
     };
 
-    addRec('🚑', 'Ambulances', amb, 'Red Crescent: 1 per 10,000 or 4 km² urban / 10 km² rural');
-    addRec('🏥', 'PHC', phc, 'WHO Standard: 1 per 10,000 or 1.5 km²');
-    addRec('📞', 'Tele', tele, 'Digital Health: 1 per 5000 + elderly modifier');
-    addRec('🆘', 'Pods', pods, 'Fallback: If no PHC within 2km or Ambulance within 10km');
-    addRec('🚐', 'Mobile', mobile, '1 per 40 km² + chronic illness modifier');
-    addRec('🚺', 'Women', women, 'Vision 2030: Specialized access for high female ratio');
+    if (deployment === 'Phased 5-Year') {
+      const phases = { amb: [], phc: [], tele: [], pods: [], mobile: [], women: [] };
+      Object.entries(data).forEach(([key, value]) => {
+        const base = Math.floor(value / 5);
+        const remainder = value % 5;
+        for (let i = 0; i < 5; i++) {
+          phases[key].push(i < remainder ? base + 1 : base);
+        }
+      });
+      setRecommendations({ data, phases });
+    } else {
+      setRecommendations({ data });
+    }
+  };
 
-    setRecommendations(final);
+  const exportToPDF = () => {
+    const element = document.getElementById('pdf-content');
+    html2pdf().from(element).save('HMG_Urban_Recommendations.pdf');
   };
 
   return (
-    <div style={{ fontFamily: 'Arial', padding: '2rem', textAlign: 'center' }}>
-      <img src="/logo.png" alt="Logo" style={{ height: 50, marginBottom: '1rem' }} />
+    <div style={{ textAlign: 'center', fontFamily: 'Arial', padding: '2rem' }}>
+      <img src="/logo.png" alt="Logo" style={{ height: 50, marginBottom: 20 }} />
       <h1>HMG Urban Planning Tool</h1>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', marginBottom: '1rem' }}>
-        {[
-          ['Population', 'population'],
-          ['Area (km²)', 'area'],
-          ['% Elderly (60+)', 'elderly'],
-          ['% Children (under 18)', 'children'],
-          ['% Female', 'female'],
-          ['% Chronic Illness', 'chronic']
-        ].map(([label, name]) => (
-          <div key={name}>
-            <label>{label}: <input type="number" name={name} value={inputs[name]} onChange={handleChange} /></label>
-          </div>
-        ))}
-        <div>
-          <label>Density:
-            <select name="density" value={inputs.density} onChange={handleChange}>
-              <option>Low</option><option>Medium</option><option>High</option>
-            </select>
-          </label>
-        </div>
-        <div>
-          <label>Setting:
-            <select name="setting" value={inputs.setting} onChange={handleChange}>
-              <option>Urban</option><option>Rural</option>
-            </select>
-          </label>
-        </div>
-        <div>
-          <label>Deployment Approach:
-            <select name="deploymentApproach" value={inputs.deploymentApproach} onChange={handleChange}>
-              <option>Single Stage</option>
-              <option>Phased 5-Year</option>
-            </select>
-          </label>
-        </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', maxWidth: '800px', margin: 'auto' }}>
+        <input name="population" placeholder="Population" value={inputs.population} onChange={handleChange} />
+        <input name="area" placeholder="Area (km²)" value={inputs.area} onChange={handleChange} />
+        <select name="density" value={inputs.density} onChange={handleChange}>
+          <option>Low</option><option>Medium</option><option>High</option>
+        </select>
+        <input name="elderly" placeholder="% Elderly (60+)" value={inputs.elderly} onChange={handleChange} />
+        <input name="children" placeholder="% Children (under 18)" value={inputs.children} onChange={handleChange} />
+        <input name="chronic" placeholder="% Chronic Illness" value={inputs.chronic} onChange={handleChange} />
+        <input name="female" placeholder="% Female" value={inputs.female} onChange={handleChange} />
+        <select name="setting" value={inputs.setting} onChange={handleChange}>
+          <option>Urban</option><option>Rural</option>
+        </select>
+        <select name="deployment" value={inputs.deployment} onChange={handleChange}>
+          <option>Single Stage</option>
+          <option>Phased 5-Year</option>
+        </select>
       </div>
 
-      <button onClick={calculate} style={{ padding: '0.5rem 1rem', fontSize: '16px' }}>Calculate</button>
+      <br />
+      <button onClick={calculate}>Calculate</button>
 
-      <div style={{ marginTop: '2rem', textAlign: 'left', maxWidth: '600px', margin: '2rem auto' }}>
-        <h2>Recommendations:</h2>
-        <ul>
-          {recommendations.map((rec, idx) => <li key={idx}>{rec}</li>)}
-        </ul>
-      </div>
+      {recommendations && (
+        <div id="pdf-content" style={{ marginTop: '2rem', maxWidth: '800px', margin: 'auto', textAlign: 'left' }}>
+          <h2 style={{ textAlign: 'center' }}>Recommendations:</h2>
+          {inputs.deployment === 'Single Stage' ? (
+            <ul>
+              <li>🚑 <b>AMBULANCES:</b> {recommendations.data.amb} — <i>Red Crescent: 1 per 10,000 or 4 km² urban / 10 km² rural</i></li>
+              <li>🏥 <b>PHC:</b> {recommendations.data.phc} — <i>WHO Standard: 1 per 10,000 or 1.5 km²</i></li>
+              <li>☎️ <b>TELE:</b> {recommendations.data.tele} — <i>Digital Health: 1 per 5000 + elderly modifier</i></li>
+              <li>🆘 <b>PODS:</b> {recommendations.data.pods} — <i>Fallback: If no PHC within 2km or Ambulance within 10km</i></li>
+              <li>🚐 <b>MOBILE:</b> {recommendations.data.mobile} — <i>1 per 40 km² + chronic illness modifier</i></li>
+              <li>🚺 <b>WOMEN:</b> {recommendations.data.women} — <i>Vision 2030: Specialized access for high female ratio</i></li>
+            </ul>
+          ) : (
+            <div>
+              {['amb', 'phc', 'tele', 'pods', 'mobile', 'women'].map(key => (
+                <div key={key}>
+                  <b>{key.toUpperCase()}:</b>
+                  <ul style={{ display: 'flex', justifyContent: 'center', listStyle: 'none', gap: '1rem' }}>
+                    {recommendations.phases[key].map((val, i) => (
+                      <li key={i}>Phase {i + 1}: {val}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
 
-      <div style={{ fontSize: '14px', color: '#666', marginTop: '2rem' }}>
+          <button onClick={exportToPDF} style={{ marginTop: '1rem' }}>Export to PDF</button>
+        </div>
+      )}
+
+      <div style={{ marginTop: '3rem', fontSize: '0.9rem', color: '#777' }}>
         Made by: Dr. Mohammed alBarti – Corporate Business Development
       </div>
     </div>
