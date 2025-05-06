@@ -77,36 +77,28 @@ export default function UrbanPlanningTool() {
     }
   };
 
-const exportToPDF = async () => {
-  const element = document.getElementById('pdf-content');
-  if (!element) return;
-
-  const html2pdf = (await import('html2pdf.js')).default;
-  html2pdf().from(element).save('HMG_Urban_Recommendations.pdf');
-};
+  const exportToPDF = async () => {
+    const element = document.getElementById('pdf-content');
+    if (!element) return;
+    const html2pdf = (await import('html2pdf.js')).default;
+    html2pdf().from(element).save('HMG_Urban_Recommendations.pdf');
+  };
 
   return (
     <div style={{ textAlign: 'center', fontFamily: 'Arial', padding: '2rem' }}>
-      <img src="/logo.png" alt="Logo" style={{ height: 50, marginBottom: 20 }} />
+      <img src="/logo.png" alt="Logo" style={{ height: 60, marginBottom: 20 }} />
       <h1>HMG Urban Planning Tool</h1>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', maxWidth: '800px', margin: 'auto' }}>
-        <input name="population" placeholder="Population" value={inputs.population} onChange={handleChange} />
-        <input name="area" placeholder="Area (km²)" value={inputs.area} onChange={handleChange} />
-        <select name="density" value={inputs.density} onChange={handleChange}>
-          <option>Low</option><option>Medium</option><option>High</option>
-        </select>
-        <input name="elderly" placeholder="% Elderly (60+)" value={inputs.elderly} onChange={handleChange} />
-        <input name="children" placeholder="% Children (under 18)" value={inputs.children} onChange={handleChange} />
-        <input name="chronic" placeholder="% Chronic Illness" value={inputs.chronic} onChange={handleChange} />
-        <input name="female" placeholder="% Female" value={inputs.female} onChange={handleChange} />
-        <select name="setting" value={inputs.setting} onChange={handleChange}>
-          <option>Urban</option><option>Rural</option>
-        </select>
-        <select name="deployment" value={inputs.deployment} onChange={handleChange}>
-          <option>Single Stage</option>
-          <option>Phased 5-Year</option>
-        </select>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', maxWidth: '1000px', margin: 'auto', alignItems: 'center' }}>
+        <label>Population:<input type="number" name="population" value={inputs.population} onChange={handleChange} /></label>
+        <label>Area (km²):<input type="number" name="area" value={inputs.area} onChange={handleChange} /></label>
+        <label>Density:<select name="density" value={inputs.density} onChange={handleChange}><option>Low</option><option>Medium</option><option>High</option></select></label>
+        <label>% Elderly (60+):<input type="number" name="elderly" value={inputs.elderly} onChange={handleChange} /></label>
+        <label>% Children (under 18):<input type="number" name="children" value={inputs.children} onChange={handleChange} /></label>
+        <label>% Chronic Illness:<input type="number" name="chronic" value={inputs.chronic} onChange={handleChange} /></label>
+        <label>% Female:<input type="number" name="female" value={inputs.female} onChange={handleChange} /></label>
+        <label>Setting:<select name="setting" value={inputs.setting} onChange={handleChange}><option>Urban</option><option>Rural</option></select></label>
+        <label>Deployment Approach:<select name="deployment" value={inputs.deployment} onChange={handleChange}><option>Single Stage</option><option>Phased 5-Year</option></select></label>
       </div>
 
       <br />
@@ -127,11 +119,11 @@ const exportToPDF = async () => {
           ) : (
             <div>
               {['amb', 'phc', 'tele', 'pods', 'mobile', 'women'].map(key => (
-                <div key={key}>
+                <div key={key} style={{ marginBottom: '1rem' }}>
                   <b>{key.toUpperCase()}:</b>
-                  <ul style={{ display: 'flex', justifyContent: 'center', listStyle: 'none', gap: '1rem' }}>
+                  <ul style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', listStyle: 'none', padding: 0, textAlign: 'center' }}>
                     {recommendations.phases[key].map((val, i) => (
-                      <li key={i}>Phase {i + 1}: {val}</li>
+                      <li key={i}><b>Phase {i + 1}:</b> {val}</li>
                     ))}
                   </ul>
                 </div>
