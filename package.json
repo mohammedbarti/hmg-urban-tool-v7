@@ -1,6 +1,5 @@
-
 {
-  "name": "hmg-urban-tool-v3",
+  "name": "hmg-urban-tool",
   "version": "1.0.0",
   "scripts": {
     "dev": "next dev",
@@ -8,8 +7,13 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "13.4.4",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "next": "^13.4.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.2",
+    "@types/node": "^20.10.5",
+    "@types/react": "^18.2.8"
   }
 }
