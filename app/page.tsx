@@ -1,123 +1,120 @@
-
-'use client';
-
 import React, { useState } from 'react';
 
-export default function Page() {
-  const [population, setPopulation] = useState('');
-  const [area, setArea] = useState('');
-  const [density, setDensity] = useState('low');
-  const [elderly, setElderly] = useState('');
-  const [children, setChildren] = useState('');
-  const [female, setFemale] = useState('');
-  const [chronic, setChronic] = useState('');
-  const [setting, setSetting] = useState('Urban');
-  const [approach, setApproach] = useState('Single Stage');
+export default function UrbanPlanningTool() {
+  const [inputs, setInputs] = useState({
+    population: '',
+    area: '',
+    density: 'Low',
+    elderly: '',
+    children: '',
+    female: '',
+    chronic: '',
+    setting: 'Urban',
+    deploymentApproach: 'Single Stage'
+  });
   const [recommendations, setRecommendations] = useState([]);
 
+  const handleChange = (e) => {
+    setInputs({ ...inputs, [e.target.name]: e.target.value });
+  };
+
+  const distributeOverYears = (count) => {
+    const perYear = Math.floor(count / 5);
+    const remainder = count % 5;
+    return Array(5).fill(perYear).map((v, i) => i < remainder ? v + 1 : v);
+  };
+
   const calculate = () => {
-    const pop = parseInt(population);
-    const km2 = parseFloat(area);
-    const el = parseInt(elderly);
-    const ch = parseInt(children);
-    const fem = parseInt(female);
-    const cr = parseInt(chronic);
-    const isUrban = setting === 'Urban';
+    const pop = parseInt(inputs.population);
+    const area = parseFloat(inputs.area);
+    const { density, elderly, children, female, chronic, setting, deploymentApproach } = inputs;
+    const isRural = setting === 'Rural';
 
-    const amb = Math.max(
-      Math.ceil(pop / 10000),
-      Math.ceil(km2 / (isUrban ? 4 : 10))
-    );
-    const phc = Math.max(
-      Math.ceil(pop / 10000),
-      Math.ceil(km2 / 1.5)
-    );
-    const tele = Math.ceil(pop / 5000) + (el > 15 ? 1 : 0);
-    const mobile = Math.ceil(km2 / 40) + (cr > 20 ? 1 : 0);
-    const pods = (phc === 0 || amb === 0) ? 1 : 0;
-    const women = fem > 60 ? 1 : 0;
+    let amb = Math.ceil(Math.max(pop / (isRural ? 5000 : 10000), area / (isRural ? 10 : 4)));
+    let phc = Math.ceil(Math.max(pop / 10000, area / 1.5));
+    let tele = Math.ceil(pop / 5000);
+    let pods = (phc === 0 || amb === 0) ? 1 : 0;
+    let mobile = Math.ceil(area / 40);
+    let women = female > 60 ? 1 : 0;
 
-    const items = [
-      `🚑 AMBULANCES: ${amb} — Red Crescent: 1 per 10,000 or 4 km² urban / 10 km² rural`,
-      `🏥 PHC: ${phc} — WHO Standard: 1 per 10,000 or 1.5 km²`,
-      `👩‍💻 TELE: ${tele} — Digital Health: 1 per 5000 + elderly modifier`,
-      `🆘 PODS: ${pods} — Fallback: If no PHC within 2km or Ambulance within 10km`,
-      `🚐 MOBILE: ${mobile} — 1 per 40 km² + chronic illness modifier`,
-      `🚺 WOMEN: ${women} — Vision 2030: Specialized access for high female ratio`
-    ];
+    if (parseInt(elderly) > 15) tele += 1;
+    if (parseInt(chronic) > 20) mobile += 1;
+    if (parseInt(children) > 25) phc += 1;
 
-    setRecommendations(items);
+    const final = [];
+
+    const addRec = (emoji, label, count, ref) => {
+      if (deploymentApproach === 'Phased 5-Year') {
+        const phases = distributeOverYears(count);
+        final.push(`${emoji} ${label.toUpperCase()}: ${count} — ${ref} — Phase 1–5: ${phases.join(', ')}`);
+      } else {
+        final.push(`${emoji} ${label.toUpperCase()}: ${count} — ${ref}`);
+      }
+    };
+
+    addRec('🚑', 'Ambulances', amb, 'Red Crescent: 1 per 10,000 or 4 km² urban / 10 km² rural');
+    addRec('🏥', 'PHC', phc, 'WHO Standard: 1 per 10,000 or 1.5 km²');
+    addRec('📞', 'Tele', tele, 'Digital Health: 1 per 5000 + elderly modifier');
+    addRec('🆘', 'Pods', pods, 'Fallback: If no PHC within 2km or Ambulance within 10km');
+    addRec('🚐', 'Mobile', mobile, '1 per 40 km² + chronic illness modifier');
+    addRec('🚺', 'Women', women, 'Vision 2030: Specialized access for high female ratio');
+
+    setRecommendations(final);
   };
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', padding: '2rem' }}>
-      <img src="/logo.png" alt="Logo" style={{ height: 40, marginBottom: '1rem' }} />
+    <div style={{ fontFamily: 'Arial', padding: '2rem', textAlign: 'center' }}>
+      <img src="/logo.png" alt="Logo" style={{ height: 50, marginBottom: '1rem' }} />
       <h1>HMG Urban Planning Tool</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', maxWidth: 800 }}>
-        <label>
-          Population:
-          <input type="number" value={population} onChange={e => setPopulation(e.target.value)} />
-        </label>
-        <label>
-          Area (km²):
-          <input type="number" value={area} onChange={e => setArea(e.target.value)} />
-        </label>
-        <label>
-          Density:
-          <select value={density} onChange={e => setDensity(e.target.value)}>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </label>
-        <label>
-          % Elderly (60+):
-          <input type="number" value={elderly} onChange={e => setElderly(e.target.value)} />
-        </label>
-        <label>
-          % Children (under 18):
-          <input type="number" value={children} onChange={e => setChildren(e.target.value)} />
-        </label>
-        <label>
-          % Female:
-          <input type="number" value={female} onChange={e => setFemale(e.target.value)} />
-        </label>
-        <label>
-          % Chronic Illness:
-          <input type="number" value={chronic} onChange={e => setChronic(e.target.value)} />
-        </label>
-        <label>
-          Setting:
-          <select value={setting} onChange={e => setSetting(e.target.value)}>
-            <option value="Urban">Urban</option>
-            <option value="Rural">Rural</option>
-          </select>
-        </label>
-        <label>
-          Deployment Approach:
-          <select value={approach} onChange={e => setApproach(e.target.value)}>
-            <option value="Single Stage">Single Stage</option>
-            <option value="Phased 5-Year">Phased 5-Year</option>
-          </select>
-        </label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', marginBottom: '1rem' }}>
+        {[
+          ['Population', 'population'],
+          ['Area (km²)', 'area'],
+          ['% Elderly (60+)', 'elderly'],
+          ['% Children (under 18)', 'children'],
+          ['% Female', 'female'],
+          ['% Chronic Illness', 'chronic']
+        ].map(([label, name]) => (
+          <div key={name}>
+            <label>{label}: <input type="number" name={name} value={inputs[name]} onChange={handleChange} /></label>
+          </div>
+        ))}
+        <div>
+          <label>Density:
+            <select name="density" value={inputs.density} onChange={handleChange}>
+              <option>Low</option><option>Medium</option><option>High</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <label>Setting:
+            <select name="setting" value={inputs.setting} onChange={handleChange}>
+              <option>Urban</option><option>Rural</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <label>Deployment Approach:
+            <select name="deploymentApproach" value={inputs.deploymentApproach} onChange={handleChange}>
+              <option>Single Stage</option>
+              <option>Phased 5-Year</option>
+            </select>
+          </label>
+        </div>
       </div>
 
-      <button onClick={calculate} style={{ marginTop: '1rem', padding: '0.6rem 1.2rem' }}>Calculate</button>
+      <button onClick={calculate} style={{ padding: '0.5rem 1rem', fontSize: '16px' }}>Calculate</button>
 
-      {recommendations.length > 0 && (
-        <div className="recommendations" style={{ marginTop: '2rem' }}>
-          <h2>Recommendations:</h2>
-          <ul>
-            {recommendations.map((rec, i) => (
-              <li key={i}>{rec}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <div style={{ marginTop: '2rem', textAlign: 'left', maxWidth: '600px', margin: '2rem auto' }}>
+        <h2>Recommendations:</h2>
+        <ul>
+          {recommendations.map((rec, idx) => <li key={idx}>{rec}</li>)}
+        </ul>
+      </div>
 
-      <div style={{ marginTop: '2rem', fontSize: '0.9rem', color: '#888' }}>
-        Made by: Dr. Mohammed alBarti — Corporate Business Development
+      <div style={{ fontSize: '14px', color: '#666', marginTop: '2rem' }}>
+        Made by: Dr. Mohammed alBarti – Corporate Business Development
       </div>
     </div>
   );
