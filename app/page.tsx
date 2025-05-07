@@ -15,9 +15,12 @@ export default function UrbanPlanningTool() {
     deployment: 'Single Stage'
   });
 
-  const [recommendations, setRecommendations] = useState(null);
+  const [recommendations, setRecommendations] = useState<{
+    data: Record<string, number>;
+    phases?: Record<string, number[]>;
+  } | null>(null);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setInputs({ ...inputs, [name]: value });
   };
@@ -54,7 +57,7 @@ export default function UrbanPlanningTool() {
     let data = { amb, phc, tele, pods, mobile, women, helipad };
 
     if (deployment === 'Phased 5-Year') {
-      const phases = {};
+      const phases: Record<string, number[]> = {};
       Object.entries(data).forEach(([key, value]) => {
         const base = Math.floor(value / 5);
         const remainder = value % 5;
@@ -109,11 +112,12 @@ export default function UrbanPlanningTool() {
             </ul>
           ) : (
             <ul>
-              {Object.entries(recommendations.phases).map(([key, values]) => (
+              {Object.entries(recommendations.phases!).map(([key, values]) => (
                 <li key={key}>
-                  <b>{emojiMap[key]} {key.toUpperCase()}:</b> {values.map((v, i) => `Phase ${i + 1}: ${v}`).join('  ')}
+                  <b>{emojiMap[key as keyof typeof emojiMap]} {key.toUpperCase()}:</b> {values.map((v, i) => `Phase ${i + 1}: ${v}`).join('  ')}
                 </li>
               ))}
+              <li>🏃 <b>WALKABILITY:</b> — <i>Ensure 80%+ access to PHC within 2km (Vision 2030)</i></li>
             </ul>
           )}
         </div>
