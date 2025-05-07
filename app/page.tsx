@@ -2,6 +2,16 @@
 
 import React, { useState } from 'react';
 
+const emojiMap = {
+  amb: '🚑',
+  phc: '🏥',
+  tele: '☎️',
+  pods: '🆘',
+  mobile: '🚐',
+  women: '😺',
+  helipad: '✈️'
+};
+
 export default function UrbanPlanningTool() {
   const [inputs, setInputs] = useState({
     population: '',
@@ -15,10 +25,7 @@ export default function UrbanPlanningTool() {
     deployment: 'Single Stage'
   });
 
-  const [recommendations, setRecommendations] = useState<{
-    data: Record<string, number>;
-    phases?: Record<string, number[]>;
-  } | null>(null);
+  const [recommendations, setRecommendations] = useState<any>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -40,7 +47,7 @@ export default function UrbanPlanningTool() {
       Math.ceil(area / (setting === 'Urban' ? 4 : 10))
     );
 
-    let phc = Math.ceil(population / 10000); // no area factor
+    let phc = Math.ceil(population / 10000); // area excluded
 
     let tele = Math.ceil(population / 5000);
     if (elderly > 15) tele += 1;
@@ -112,12 +119,12 @@ export default function UrbanPlanningTool() {
             </ul>
           ) : (
             <ul>
-              {Object.entries(recommendations.phases!).map(([key, values]) => (
-                <li key={key}>
-                  <b>{emojiMap[key as keyof typeof emojiMap]} {key.toUpperCase()}:</b> {values.map((v, i) => `Phase ${i + 1}: ${v}`).join('  ')}
-                </li>
-              ))}
-              <li>🏃 <b>WALKABILITY:</b> — <i>Ensure 80%+ access to PHC within 2km (Vision 2030)</i></li>
+              {recommendations.phases &&
+                Object.entries(recommendations.phases as Record<string, number[]>).map(([key, values]) => (
+                  <li key={key}>
+                    <b>{emojiMap[key as keyof typeof emojiMap]} {key.toUpperCase()}:</b> {values.map((v, i) => `Phase ${i + 1}: ${v}`).join('  ')}
+                  </li>
+                ))}
             </ul>
           )}
         </div>
@@ -129,13 +136,3 @@ export default function UrbanPlanningTool() {
     </div>
   );
 }
-
-const emojiMap = {
-  amb: '🚑',
-  phc: '🏥',
-  tele: '☎️',
-  pods: '🆘',
-  mobile: '🚐',
-  women: '😺',
-  helipad: '✈️'
-};
