@@ -21,7 +21,6 @@ export default function UrbanPlanningTool() {
     children: '',
     chronic: '',
     female: '',
-    walkability: '',
     setting: 'Urban',
     deployment: 'Single Stage'
   });
@@ -39,7 +38,6 @@ export default function UrbanPlanningTool() {
     const elderly = parseInt(inputs.elderly);
     const chronic = parseInt(inputs.chronic);
     const female = parseInt(inputs.female);
-    const walkability = parseInt(inputs.walkability);
     const setting = inputs.setting;
     const deployment = inputs.deployment;
 
@@ -48,7 +46,7 @@ export default function UrbanPlanningTool() {
       Math.ceil(area / (setting === 'Urban' ? 4 : 10))
     );
 
-    let phc = Math.ceil(population / 10000); // Area removed per your request
+    let phc = Math.ceil(population / 10000); // Area factor removed
 
     let tele = Math.ceil(population / 5000);
     if (elderly > 15) tele += 1;
@@ -62,30 +60,19 @@ export default function UrbanPlanningTool() {
 
     let helipad = setting === 'Rural' ? 1 : 0;
 
-    let walkabilityWarning = walkability < 80;
-
-    let data = { amb, phc, tele, pods, mobile, women, helipad, walkabilityWarning };
+    let data = { amb, phc, tele, pods, mobile, women, helipad };
 
     if (deployment === 'Phased 5-Year') {
       const phases: any = {};
       Object.entries(data).forEach(([key, value]) => {
-        if (typeof value === 'number') {
-          const base = Math.floor(value / 5);
-          const remainder = value % 5;
-          phases[key] = Array.from({ length: 5 }, (_, i) => i < remainder ? base + 1 : base);
-        }
+        const base = Math.floor(value / 5);
+        const remainder = value % 5;
+        phases[key] = Array.from({ length: 5 }, (_, i) => i < remainder ? base + 1 : base);
       });
       setRecommendations({ data, phases });
     } else {
       setRecommendations({ data });
     }
-  };
-
-  const exportToPDF = async () => {
-    const element = document.getElementById('pdf-content');
-    if (!element) return;
-    const html2pdf = (await import('html2pdf.js')).default;
-    html2pdf().from(element).save('HMG_Urban_Recommendations.pdf');
   };
 
   return (
@@ -100,8 +87,7 @@ export default function UrbanPlanningTool() {
           { label: '% Elderly (60+)', name: 'elderly' },
           { label: '% Children (under 18)', name: 'children' },
           { label: '% Chronic Illness', name: 'chronic' },
-          { label: '% Female', name: 'female' },
-          { label: 'Walkability Target (%)', name: 'walkability' }
+          { label: '% Female', name: 'female' }
         ].map((field) => (
           <div key={field.name} style={{ textAlign: 'left' }}>
             <label>{field.label}</label><br />
@@ -144,14 +130,13 @@ export default function UrbanPlanningTool() {
 
           {inputs.deployment === 'Single Stage' ? (
             <ul>
-              <li>{emojiMap.amb} <b>AMBULANCES:</b> {recommendations.data.amb}</li>
-              <li>{emojiMap.phc} <b>PHC:</b> {recommendations.data.phc}</li>
-              <li>{emojiMap.tele} <b>TELE:</b> {recommendations.data.tele}</li>
-              <li>{emojiMap.pods} <b>PODS:</b> {recommendations.data.pods}</li>
-              <li>{emojiMap.mobile} <b>MOBILE:</b> {recommendations.data.mobile}</li>
-              <li>{emojiMap.women} <b>WOMEN:</b> {recommendations.data.women}</li>
-              {recommendations.data.helipad ? <li>{emojiMap.helipad} <b>HELIPAD:</b> 1 — Required for rural coverage</li> : null}
-              {recommendations.data.walkabilityWarning ? <li>⚠️ <b>WALKABILITY:</b> Below 80% access — action required</li> : null}
+              <li>{emojiMap.amb} <b>AMBULANCES:</b> {recommendations.data.amb} — <i>Red Crescent: 1 per 10,000 or 4 km² urban / 10 km² rural</i></li>
+              <li>{emojiMap.phc} <b>PHC:</b> {recommendations.data.phc} — <i>WHO: 1 per 10,000</i></li>
+              <li>{emojiMap.tele} <b>TELE:</b> {recommendations.data.tele} — <i>1 per 5000 + elderly modifier</i></li>
+              <li>{emojiMap.pods} <b>PODS:</b> {recommendations.data.pods} — <i>Fallback: No PHC within 2km or ambulance within 10km</i></li>
+              <li>{emojiMap.mobile} <b>MOBILE:</b> {recommendations.data.mobile} — <i>1 per 40 km² + chronic illness modifier</i></li>
+              <li>{emojiMap.women} <b>WOMEN:</b> {recommendations.data.women} — <i>Vision 2030: High female ratio access</i></li>
+              {recommendations.data.helipad ? <li>{emojiMap.helipad} <b>HELIPAD:</b> 1 — <i>Required for rural sites</i></li> : null}
             </ul>
           ) : (
             <ul>
@@ -160,11 +145,8 @@ export default function UrbanPlanningTool() {
                   <b>{emojiMap[key]} {key.toUpperCase()}:</b> {values.map((v: number, i: number) => `Phase ${i + 1}: ${v}`).join('  ')}
                 </li>
               ))}
-              {recommendations.data.walkabilityWarning ? <li>⚠️ <b>WALKABILITY:</b> Below 80% access — action required</li> : null}
             </ul>
           )}
-
-          <button onClick={exportToPDF} style={{ marginTop: '1rem' }}>Export to PDF</button>
         </div>
       )}
 
