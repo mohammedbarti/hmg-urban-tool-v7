@@ -2,16 +2,6 @@
 
 import React, { useState } from 'react';
 
-const emojiMap = {
-  amb: '🚑',
-  phc: '🏥',
-  tele: '☎️',
-  pods: '🆘',
-  mobile: '🚐',
-  women: '🚺',
-  helipad: '✈️'
-};
-
 export default function UrbanPlanningTool() {
   const [inputs, setInputs] = useState({
     population: '',
@@ -25,9 +15,9 @@ export default function UrbanPlanningTool() {
     deployment: 'Single Stage'
   });
 
-  const [recommendations, setRecommendations] = useState<any>(null);
+  const [recommendations, setRecommendations] = useState(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setInputs({ ...inputs, [name]: value });
   };
@@ -35,10 +25,11 @@ export default function UrbanPlanningTool() {
   const calculate = () => {
     const population = parseInt(inputs.population);
     const area = parseFloat(inputs.area);
+    const setting = inputs.setting;
     const elderly = parseInt(inputs.elderly);
+    const children = parseInt(inputs.children);
     const chronic = parseInt(inputs.chronic);
     const female = parseInt(inputs.female);
-    const setting = inputs.setting;
     const deployment = inputs.deployment;
 
     let amb = Math.max(
@@ -46,7 +37,7 @@ export default function UrbanPlanningTool() {
       Math.ceil(area / (setting === 'Urban' ? 4 : 10))
     );
 
-    let phc = Math.ceil(population / 10000); // Area factor removed
+    let phc = Math.ceil(population / 10000); // no area factor
 
     let tele = Math.ceil(population / 5000);
     if (elderly > 15) tele += 1;
@@ -63,7 +54,7 @@ export default function UrbanPlanningTool() {
     let data = { amb, phc, tele, pods, mobile, women, helipad };
 
     if (deployment === 'Phased 5-Year') {
-      const phases: any = {};
+      const phases = {};
       Object.entries(data).forEach(([key, value]) => {
         const base = Math.floor(value / 5);
         const remainder = value % 5;
@@ -80,69 +71,47 @@ export default function UrbanPlanningTool() {
       <img src="/logo.png" alt="Logo" style={{ height: 50, marginBottom: 20 }} />
       <h1>HMG Urban Planning Tool</h1>
 
-      <form style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', maxWidth: '900px', margin: 'auto' }}>
-        {[
-          { label: 'Population', name: 'population' },
-          { label: 'Area (km²)', name: 'area' },
-          { label: '% Elderly (60+)', name: 'elderly' },
-          { label: '% Children (under 18)', name: 'children' },
-          { label: '% Chronic Illness', name: 'chronic' },
-          { label: '% Female', name: 'female' }
-        ].map((field) => (
-          <div key={field.name} style={{ textAlign: 'left' }}>
-            <label>{field.label}</label><br />
-            <input name={field.name} value={(inputs as any)[field.name]} onChange={handleChange} />
-          </div>
-        ))}
-
-        <div>
-          <label>Density</label><br />
-          <select name="density" value={inputs.density} onChange={handleChange}>
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
-          </select>
-        </div>
-
-        <div>
-          <label>Setting</label><br />
-          <select name="setting" value={inputs.setting} onChange={handleChange}>
-            <option>Urban</option>
-            <option>Rural</option>
-          </select>
-        </div>
-
-        <div>
-          <label>Deployment</label><br />
-          <select name="deployment" value={inputs.deployment} onChange={handleChange}>
-            <option>Single Stage</option>
-            <option>Phased 5-Year</option>
-          </select>
-        </div>
-      </form>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', maxWidth: '800px', margin: 'auto' }}>
+        <input name="population" placeholder="Population" value={inputs.population} onChange={handleChange} />
+        <input name="area" placeholder="Area (km²)" value={inputs.area} onChange={handleChange} />
+        <select name="density" value={inputs.density} onChange={handleChange}>
+          <option>Low</option><option>Medium</option><option>High</option>
+        </select>
+        <input name="elderly" placeholder="% Elderly (60+)" value={inputs.elderly} onChange={handleChange} />
+        <input name="children" placeholder="% Children (under 18)" value={inputs.children} onChange={handleChange} />
+        <input name="chronic" placeholder="% Chronic Illness" value={inputs.chronic} onChange={handleChange} />
+        <input name="female" placeholder="% Female" value={inputs.female} onChange={handleChange} />
+        <select name="setting" value={inputs.setting} onChange={handleChange}>
+          <option>Urban</option><option>Rural</option>
+        </select>
+        <select name="deployment" value={inputs.deployment} onChange={handleChange}>
+          <option>Single Stage</option>
+          <option>Phased 5-Year</option>
+        </select>
+      </div>
 
       <br />
       <button onClick={calculate}>Calculate</button>
 
       {recommendations && (
-        <div id="pdf-content" style={{ marginTop: '2rem', maxWidth: '900px', margin: 'auto', textAlign: 'left' }}>
+        <div id="pdf-content" style={{ marginTop: '2rem', maxWidth: '800px', margin: 'auto', textAlign: 'left' }}>
           <h2 style={{ textAlign: 'center' }}>Recommendations:</h2>
-
           {inputs.deployment === 'Single Stage' ? (
             <ul>
-              <li>{emojiMap.amb} <b>AMBULANCES:</b> {recommendations.data.amb} — <i>Red Crescent: 1 per 10,000 or 4 km² urban / 10 km² rural</i></li>
-              <li>{emojiMap.phc} <b>PHC:</b> {recommendations.data.phc} — <i>WHO: 1 per 10,000</i></li>
-              <li>{emojiMap.tele} <b>TELE:</b> {recommendations.data.tele} — <i>1 per 5000 + elderly modifier</i></li>
-              <li>{emojiMap.pods} <b>PODS:</b> {recommendations.data.pods} — <i>Fallback: No PHC within 2km or ambulance within 10km</i></li>
-              <li>{emojiMap.mobile} <b>MOBILE:</b> {recommendations.data.mobile} — <i>1 per 40 km² + chronic illness modifier</i></li>
-              <li>{emojiMap.women} <b>WOMEN:</b> {recommendations.data.women} — <i>Vision 2030: High female ratio access</i></li>
-              {recommendations.data.helipad ? <li>{emojiMap.helipad} <b>HELIPAD:</b> 1 — <i>Required for rural sites</i></li> : null}
+              <li>🚑 <b>AMBULANCES:</b> {recommendations.data.amb} — <i>Red Crescent: 1 per 10,000 or 4 km² urban / 10 km² rural</i></li>
+              <li>🏥 <b>PHC:</b> {recommendations.data.phc} — <i>WHO Standard: 1 per 10,000</i></li>
+              <li>☎️ <b>TELE:</b> {recommendations.data.tele} — <i>Digital Health: 1 per 5000 + elderly modifier</i></li>
+              <li>🆘 <b>PODS:</b> {recommendations.data.pods} — <i>Fallback: If no PHC within 2km or Ambulance within 10km</i></li>
+              <li>🚐 <b>MOBILE:</b> {recommendations.data.mobile} — <i>1 per 40 km² + chronic illness modifier</i></li>
+              <li>😺 <b>WOMEN:</b> {recommendations.data.women} — <i>Vision 2030: Specialized access for high female ratio</i></li>
+              {recommendations.data.helipad ? <li>✈️ <b>HELIPAD:</b> 1 — <i>Required for rural coverage</i></li> : null}
+              <li>🏃 <b>WALKABILITY:</b> — <i>Ensure 80%+ access to PHC within 2km (Vision 2030)</i></li>
             </ul>
           ) : (
             <ul>
-              {Object.entries(recommendations.phases).map(([key, values]: any) => (
+              {Object.entries(recommendations.phases).map(([key, values]) => (
                 <li key={key}>
-                  <b>{emojiMap[key]} {key.toUpperCase()}:</b> {values.map((v: number, i: number) => `Phase ${i + 1}: ${v}`).join('  ')}
+                  <b>{emojiMap[key]} {key.toUpperCase()}:</b> {values.map((v, i) => `Phase ${i + 1}: ${v}`).join('  ')}
                 </li>
               ))}
             </ul>
@@ -156,3 +125,13 @@ export default function UrbanPlanningTool() {
     </div>
   );
 }
+
+const emojiMap = {
+  amb: '🚑',
+  phc: '🏥',
+  tele: '☎️',
+  pods: '🆘',
+  mobile: '🚐',
+  women: '😺',
+  helipad: '✈️'
+};
