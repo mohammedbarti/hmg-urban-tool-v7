@@ -73,6 +73,7 @@ export default function UrbanPlanningTool() {
     if (!element) return;
     const html2pdf = (await import('html2pdf.js')).default;
     html2pdf().from(element).save('HMG_Urban_Recommendations.pdf');
+    };
 
   return (
     <div style={{ textAlign: 'center', fontFamily: 'Arial', padding: '2rem' }}>
